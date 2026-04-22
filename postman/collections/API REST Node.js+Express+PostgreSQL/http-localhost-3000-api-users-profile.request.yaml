@@ -1,0 +1,17 @@
+$kind: http-request
+name: http://localhost:3000/api/users/profile
+url: http://localhost:3000/api/users/register
+method: POST
+headers:
+  Authorization: Bearer
+    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoiZGVidWdnZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NzQ3OTUzNDUsImV4cCI6MTc3NDc5ODk0NX0.LVCIgS6h8LpZkDV8Nyr-R-3pEPOPkru4gtxa4pxboUQ
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"debugger@example.com\",\r
+
+    \  \"password\": \"unannuevacontraseña\"\r
+
+    }"
+order: 1774795522278

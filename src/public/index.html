@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎟️ Sistema de Reserva de Entradas</title>
+  <style>
+    /* ── Reset y base ─────────────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Layout principal ─────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Tarjetas ─────────────────────────────────────────────── */
+    .card {
+      background: #1e2130;
+      border-radius: 14px;
+      padding: 22px;
+      border: 1px solid #2d3148;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Selector de evento ───────────────────────────────────── */
+    .event-selector {
+      background: #1e2130;
+      border-radius: 14px;
+      padding: 22px;
+      border: 1px solid #2d3148;
+      max-width: 1100px;
+      margin: 0 auto 20px;
+    }
+
+    .event-selector h2 {
+      font-size: 1.1rem;
+      margin-bottom: 14px;
+    }
+
+    .events-list {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .event-btn {
+      background: #2d3148;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 12px 18px;
+      cursor: pointer;
+      color: #e2e8f0;
+      transition: all 0.2s;
+      text-align: left;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .event-btn:hover { border-color: #6366f1; background: #363b5e; }
+    .event-btn.active { border-color: #6366f1; background: #363b5e; }
+
+    .event-btn .event-name { font-weight: 600; font-size: 0.95rem; }
+    .event-btn .event-seats {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      color: #94a3b8;
+    }
+
+    .seats-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .seats-ok   { background: #14532d; color: #86efac; }
+    .seats-low  { background: #713f12; color: #fde68a; }
+    .seats-none { background: #450a0a; color: #fca5a5; }
+
+    /* ── Panel de asientos ────────────────────────────────────── */
+    .seats-display {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .seats-number {
+      font-size: 5rem;
+      font-weight: 800;
+      line-height: 1;
+      transition: all 0.4s;
+    }
+
+    .seats-label {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    .seats-green  { color: #4ade80; }
+    .seats-yellow { color: #facc15; }
+    .seats-red    { color: #f87171; }
+
+    /* ── Compradores ──────────────────────────────────────────── */
+    .buyer {
+      background: #252840;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .buyer-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .buyer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .avatar-a { background: #312e81; }
+    .avatar-b { background: #1e3a5f; }
+
+    .buyer-name { font-weight: 600; }
+    .buyer-status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #2d3148;
+      color: #94a3b8;
+    }
+
+    .status-waiting  { background: #2d3148; color: #94a3b8; }
+    .status-loading  { background: #1e3a5f; color: #93c5fd; }
+    .status-success  { background: #14532d; color: #86efac; }
+    .status-error    { background: #450a0a; color: #fca5a5; }
+
+    /* ── Botones de acción ────────────────────────────────────── */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-safe {
+      background: #4f46e5;
+      color: white;
+    }
+    .btn-safe:hover:not(:disabled) { background: #4338ca; }
+
+    .btn-unsafe {
+      background: #b45309;
+      color: white;
+    }
+    .btn-unsafe:hover:not(:disabled) { background: #92400e; }
+
+    .btn-reset {
+      background: #1e2130;
+      color: #94a3b8;
+      border: 1px solid #2d3148;
+      margin-top: 12px;
+    }
+    .btn-reset:hover:not(:disabled) { background: #2d3148; color: #e2e8f0; }
+
+    /* ── Log de pasos ─────────────────────────────────────────── */
+    .log-panel {
+      background: #0d0f1a;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      min-height: 120px;
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid #1e2130;
+    }
+
+    .log-panel .log-empty {
+      color: #4a5568;
+      font-style: italic;
+    }
+
+    .log-line {
+      padding: 3px 0;
+      border-bottom: 1px solid #1a1d2e;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .log-line:last-child { border-bottom: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Historial ────────────────────────────────────────────── */
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: #64748b;
+      border-bottom: 1px solid #2d3148;
+      font-weight: 600;
+    }
+
+    .history-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #1e2130;
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .badge-confirmed { color: #86efac; }
+    .badge-cancelled { color: #fca5a5; }
+
+    /* ── Explicación ──────────────────────────────────────────── */
+    .explain-box {
+      background: #1a1f35;
+      border-left: 3px solid #6366f1;
+      border-radius: 0 10px 10px 0;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .explain-box strong { color: #c7d2fe; }
+
+    .explain-unsafe {
+      border-left-color: #f59e0b;
+    }
+
+    /* ── Resultado final ──────────────────────────────────────── */
+    .result-banner {
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .result-success { background: #14532d; color: #86efac; }
+    .result-error   { background: #450a0a; color: #fca5a5; }
+    .result-warning { background: #713f12; color: #fde68a; }
+
+    /* ── Spinner ──────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Full width ───────────────────────────────────────────── */
+    .full { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+
+  <h1>🎟️ Sistema de Reserva de Entradas</h1>
+  <p class="subtitle">Demostración de transacciones concurrentes en PostgreSQL</p>
+
+  <!-- ── Selector de evento ──────────────────────────────────── -->
+  <div class="event-selector">
+    <h2>📅 Selecciona un evento</h2>
+    <div class="events-list" id="eventsList">
+      <p style="color:#64748b">Cargando eventos...</p>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ── Panel: Compra SEGURA ────────────────────────────────── -->
+    <div class="card">
+      <h2>🔒 Compra Segura <span style="font-size:0.75rem;color:#6366f1;font-weight:400">(con transacción)</span></h2>
+
+      <div class="explain-box">
+        <strong>¿Cómo funciona?</strong><br>
+        Cuando dos personas compran al mismo tiempo, la base de datos
+        <strong>bloquea la fila</strong> del evento. La segunda persona
+        espera hasta que la primera termine. Así nunca se vende el mismo
+        asiento dos veces.
+      </div>
+
+      <!-- Asientos disponibles -->
+      <div class="seats-display">
+        <div class="seats-number seats-green" id="safeSeats">—</div>
+        <div class="seats-label">asientos disponibles</div>
+      </div>
+
+      <!-- Comprador A -->
+      <div class="buyer">
+        <div class="buyer-header">
+          <div class="buyer-avatar avatar-a">👩</div>
+          <span class="buyer-name">Ana</span>
+          <span class="buyer-status status-waiting" id="statusAna">En espera</span>
+        </div>
+        <div class="log-panel" id="logAna">
+          <span class="log-empty">El log aparecerá aquí...</span>
+        </div>
+      </div>
+
+      <!-- Comprador B -->
+      <div class="buyer">
+        <div class="buyer-header">
+          <div class="buyer-avatar avatar-b">👨</div>
+          <span class="buyer-name">Luis</span>
+          <span class="buyer-status status-waiting" id="statusLuis">En espera</span>
+        </div>
+        <div class="log-panel" id="logLuis">
+          <span class="log-empty">El log aparecerá aquí...</span>
+        </div>
+      </div>
+
+      <div class="result-banner" id="resultSafe"></div>
+
+      <button class="btn btn-safe" id="btnSafe" onclick="runSafe()">
+        ▶ Simular compra simultánea SEGURA
+      </button>
+      <button class="btn btn-reset" onclick="resetEvent()">
+        🔄 Resetear asientos del evento
+      </button>
+    </div>
+
+    <!-- ── Panel: Compra INSEGURA ───────────────────────────────── -->
+    <div class="card">
+      <h2>⚠️ Compra Insegura <span style="font-size:0.75rem;color:#f59e0b;font-weight:400">(sin transacción)</span></h2>
+
+      <div class="explain-box explain-unsafe">
+        <strong>¿Cuál es el problema?</strong><br>
+        Sin transacción, ambas personas leen el stock
+        <strong>al mismo tiempo</strong> y las dos ven "1 asiento disponible".
+        Las dos pasan la verificación y el sistema vende el mismo asiento
+        dos veces. 😱
+      </div>
+
+      <!-- Asientos disponibles -->
+      <div class="seats-display">
+        <div class="seats-number seats-yellow" id="unsafeSeats">—</div>
+        <div class="seats-label">asientos disponibles</div>
+      </div>
+
+      <!-- Comprador C -->
+      <div class="buyer">
+        <div class="buyer-header">
+          <div class="buyer-avatar avatar-a">👩</div>
+          <span class="buyer-name">Ana</span>
+          <span class="buyer-status status-waiting" id="statusAnaU">En espera</span>
+        </div>
+        <div class="log-panel" id="logAnaU">
+          <span class="log-empty">El log aparecerá aquí...</span>
+        </div>
+      </div>
+
+      <!-- Comprador D -->
+      <div class="buyer">
+        <div class="buyer-header">
+          <div class="buyer-avatar avatar-b">👨</div>
+          <span class="buyer-name">Luis</span>
+          <span class="buyer-status status-waiting" id="statusLuisU">En espera</span>
+        </div>
+        <div class="log-panel" id="logLuisU">
+          <span class="log-empty">El log aparecerá aquí...</span>
+        </div>
+      </div>
+
+      <div class="result-banner" id="resultUnsafe"></div>
+
+      <button class="btn btn-unsafe" id="btnUnsafe" onclick="runUnsafe()">
+        ▶ Simular compra simultánea INSEGURA
+      </button>
+      <button class="btn btn-reset" onclick="resetEvent()">
+        🔄 Resetear asientos del evento
+      </button>
+    </div>
+
+    <!-- ── Historial ────────────────────────────────────────────── -->
+    <div class="card full">
+      <h2>📋 Historial de reservas</h2>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Comprador</th>
+            <th>Evento</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="5" style="color:#4a5568;padding:16px">Sin reservas aún.</td></tr>
+        </tbody>
+      </table>
+      <button class="btn btn-reset" style="max-width:200px;margin-top:14px" onclick="loadHistory()">
+        🔄 Actualizar historial
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Estado global ──────────────────────────────────────────────
+    let selectedEventId = null;
+    let selectedEventSeats = 0;
+
+    // ── Cargar eventos al iniciar ──────────────────────────────────
+    async function loadEvents() {
+      const res = await fetch('/api/events');
+      const events = await res.json();
+
+      const container = document.getElementById('eventsList');
+      container.innerHTML = '';
+
+      events.forEach(ev => {
+        const seats = ev.available_seats;
+        const badgeClass = seats === 0 ? 'seats-none' : seats <= 2 ? 'seats-low' : 'seats-ok';
+        const badgeText  = seats === 0 ? 'Sin asientos' : seats === 1 ? '¡Último asiento!' : `${seats} asientos`;
+
+        const btn = document.createElement('button');
+        btn.className = 'event-btn';
+        btn.innerHTML = `
+          <div class="event-name">${ev.name}</div>
+          <div class="event-seats">${ev.description}</div>
+          <span class="seats-badge ${badgeClass}">${badgeText}</span>
+        `;
+        btn.onclick = () => selectEvent(ev, btn);
+        container.appendChild(btn);
+      });
+
+      // Seleccionar el primero por defecto
+      if (events.length > 0) {
+        selectEvent(events[0], container.querySelector('.event-btn'));
+      }
+    }
+
+    function selectEvent(ev, btnEl) {
+      selectedEventId = ev.id;
+      selectedEventSeats = ev.available_seats;
+
+      // Marcar botón activo
+      document.querySelectorAll('.event-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+
+      // Actualizar contadores
+      updateSeatsDisplay('safeSeats', ev.available_seats);
+      updateSeatsDisplay('unsafeSeats', ev.available_seats);
+    }
+
+    function updateSeatsDisplay(elementId, seats) {
+      const el = document.getElementById(elementId);
+      el.textContent = seats;
+      el.className = 'seats-number ' + (
+        seats === 0 ? 'seats-red' :
+        seats <= 2  ? 'seats-yellow' :
+                      'seats-green'
+      );
+    }
+
+    // ── Helpers de UI ─────────────────────────────────────────────
+    function setStatus(id, text, cls) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = `buyer-status ${cls}`;
+    }
+
+    function appendLog(panelId, lines) {
+      const panel = document.getElementById(panelId);
+      // Limpiar placeholder
+      const empty = panel.querySelector('.log-empty');
+      if (empty) empty.remove();
+
+      lines.forEach(line => {
+        const div = document.createElement('div');
+        div.className = 'log-line';
+        div.textContent = line;
+        panel.appendChild(div);
+        panel.scrollTop = panel.scrollHeight;
+      });
+    }
+
+    function clearLog(panelId) {
+      const panel = document.getElementById(panelId);
+      panel.innerHTML = '<span class="log-empty">El log aparecerá aquí...</span>';
+    }
+
+    function showResult(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = `result-banner result-${type}`;
+      el.style.display = 'block';
+    }
+
+    function hideResult(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    // ── DEMO SEGURA ────────────────────────────────────────────────
+    async function runSafe() {
+      if (!selectedEventId) return alert('Selecciona un evento primero');
+
+      const btn = document.getElementById('btnSafe');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Simulando...';
+
+      // Limpiar estado anterior
+      clearLog('logAna'); clearLog('logLuis');
+      hideResult('resultSafe');
+      setStatus('statusAna',  'Comprando...', 'status-loading');
+      setStatus('statusLuis', 'Comprando...', 'status-loading');
+
+      // Lanzar las dos compras al mismo tiempo (Promise.all)
+      const [resAna, resLuis] = await Promise.all([
+        fetch('/api/reservations/book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: selectedEventId, buyer_name: 'Ana' })
+        }).then(r => r.json()),
+
+        fetch('/api/reservations/book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: selectedEventId, buyer_name: 'Luis' })
+        }).then(r => r.json())
+      ]);
+
+      // Mostrar logs paso a paso
+      appendLog('logAna',  resAna.steps  || [resAna.error]);
+      appendLog('logLuis', resLuis.steps || [resLuis.error]);
+
+      // Actualizar estados
+      setStatus('statusAna',  resAna.success  ? '✅ Reservado' : '❌ Sin asiento', resAna.success  ? 'status-success' : 'status-error');
+      setStatus('statusLuis', resLuis.success ? '✅ Reservado' : '❌ Sin asiento', resLuis.success ? 'status-success' : 'status-error');
+
+      // Banner de resultado
+      const winners = [resAna.success && 'Ana', resLuis.success && 'Luis'].filter(Boolean);
+      if (winners.length === 1) {
+        showResult('resultSafe', `✅ Solo ${winners[0]} obtuvo el asiento. ¡La transacción funcionó correctamente!`, 'success');
+      } else if (winners.length === 0) {
+        showResult('resultSafe', '❌ Nadie pudo reservar (sin asientos disponibles)', 'error');
+      } else {
+        showResult('resultSafe', '⚠️ Ambos reservaron — esto no debería pasar con transacciones', 'warning');
+      }
+
+      await loadEvents();
+      await loadHistory();
+
+      btn.disabled = false;
+      btn.innerHTML = '▶ Simular compra simultánea SEGURA';
+    }
+
+    // ── DEMO INSEGURA ──────────────────────────────────────────────
+    async function runUnsafe() {
+      if (!selectedEventId) return alert('Selecciona un evento primero');
+
+      const btn = document.getElementById('btnUnsafe');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Simulando...';
+
+      clearLog('logAnaU'); clearLog('logLuisU');
+      hideResult('resultUnsafe');
+      setStatus('statusAnaU',  'Comprando...', 'status-loading');
+      setStatus('statusLuisU', 'Comprando...', 'status-loading');
+
+      // Ambas peticiones con delay para que lean el stock al mismo tiempo
+      const [resAna, resLuis] = await Promise.all([
+        fetch('/api/reservations/book-unsafe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: selectedEventId, buyer_name: 'Ana', delay_ms: 200 })
+        }).then(r => r.json()),
+
+        fetch('/api/reservations/book-unsafe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: selectedEventId, buyer_name: 'Luis', delay_ms: 200 })
+        }).then(r => r.json())
+      ]);
+
+      appendLog('logAnaU',  resAna.steps  || [resAna.error]);
+      appendLog('logLuisU', resLuis.steps || [resLuis.error]);
+
+      setStatus('statusAnaU',  resAna.success  ? '✅ Reservado' : '❌ Sin asiento', resAna.success  ? 'status-success' : 'status-error');
+      setStatus('statusLuisU', resLuis.success ? '✅ Reservado' : '❌ Sin asiento', resLuis.success ? 'status-success' : 'status-error');
+
+      const winners = [resAna.success && 'Ana', resLuis.success && 'Luis'].filter(Boolean);
+      if (winners.length === 2) {
+        showResult('resultUnsafe', '⚠️ ¡Ana Y Luis reservaron el mismo asiento! Esto es el problema de la concurrencia sin transacción.', 'warning');
+      } else if (winners.length === 1) {
+        showResult('resultUnsafe', `Solo ${winners[0]} reservó. Intenta resetear y volver a intentar.`, 'success');
+      } else {
+        showResult('resultUnsafe', '❌ Nadie pudo reservar (sin asientos disponibles)', 'error');
+      }
+
+      await loadEvents();
+      await loadHistory();
+
+      btn.disabled = false;
+      btn.innerHTML = '▶ Simular compra simultánea INSEGURA';
+    }
+
+    // ── Resetear evento ────────────────────────────────────────────
+    async function resetEvent() {
+      if (!selectedEventId) return alert('Selecciona un evento primero');
+
+      await fetch(`/api/reservations/reset/${selectedEventId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seats: 1 })
+      });
+
+      // Limpiar UI
+      clearLog('logAna');  clearLog('logLuis');
+      clearLog('logAnaU'); clearLog('logLuisU');
+      hideResult('resultSafe'); hideResult('resultUnsafe');
+      setStatus('statusAna',  'En espera', 'status-waiting');
+      setStatus('statusLuis', 'En espera', 'status-waiting');
+      setStatus('statusAnaU', 'En espera', 'status-waiting');
+      setStatus('statusLuisU','En espera', 'status-waiting');
+
+      await loadEvents();
+      await loadHistory();
+    }
+
+    // ── Historial ──────────────────────────────────────────────────
+    async function loadHistory() {
+      const res = await fetch('/api/reservations');
+      const data = await res.json();
+      const tbody = document.getElementById('historyBody');
+
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:#4a5568;padding:16px">Sin reservas aún.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(r => `
+        <tr>
+          <td style="color:#64748b">#${r.id}</td>
+          <td>${r.buyer_name}</td>
+          <td>${r.event_name}</td>
+          <td class="badge-${r.status}">${r.status === 'confirmed' ? '✅ Confirmada' : '❌ Cancelada'}</td>
+          <td style="color:#64748b">${new Date(r.created_at).toLocaleString('es')}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ── Iniciar ────────────────────────────────────────────────────
+    loadEvents();
+    loadHistory();
+  </script>
+</body>
+</html>
