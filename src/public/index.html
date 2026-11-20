@@ -488,6 +488,7 @@
 
         const btn = document.createElement('button');
         btn.className = 'event-btn';
+        btn.dataset.eventId = ev.id;
         btn.innerHTML = `
           <div class="event-name">${ev.name}</div>
           <div class="event-seats">${ev.description}</div>
@@ -497,9 +498,22 @@
         container.appendChild(btn);
       });
 
-      // Seleccionar el primero por defecto
       if (events.length > 0) {
-        selectEvent(events[0], container.querySelector('.event-btn'));
+        // Si ya hay un evento seleccionado, mantenerlo y actualizar su contador
+        const currentEvent = selectedEventId
+          ? events.find(e => e.id === selectedEventId)
+          : null;
+
+        if (currentEvent) {
+          // Remarcar el botón activo y actualizar contadores con datos frescos
+          const activeBtn = container.querySelector(`[data-event-id="${currentEvent.id}"]`);
+          if (activeBtn) activeBtn.classList.add('active');
+          updateSeatsDisplay('safeSeats', currentEvent.available_seats);
+          updateSeatsDisplay('unsafeSeats', currentEvent.available_seats);
+        } else {
+          // Primera carga: seleccionar el primero por defecto
+          selectEvent(events[0], container.querySelector('.event-btn'));
+        }
       }
     }
 

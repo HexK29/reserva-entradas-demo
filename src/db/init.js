@@ -63,19 +63,19 @@ const initDB = async () => {
           (
             'Concierto de Rock',
             'Banda en vivo — Estadio Nacional',
-            100, 1,
+            1, 1,
             NOW() + INTERVAL '7 days'
           ),
           (
             'Final de Futbol',
             'Copa Regional — Estadio Municipal',
-            200, 2,
+            2, 2,
             NOW() + INTERVAL '14 days'
           ),
           (
             'Show de Comedia',
             'Stand-up en el Teatro Central',
-            50, 3,
+            3, 3,
             NOW() + INTERVAL '3 days'
           )
       `);

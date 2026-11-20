@@ -161,18 +161,30 @@ router.get('/', async (req, res) => {
 });
 
 // Resetear asientos de un evento (útil para la demo)
+// Restaura available_seats al valor original de total_seats
 router.post('/reset/:event_id', async (req, res) => {
-  const { seats } = req.body;
   try {
-    await pool.query(
-      'UPDATE events SET available_seats = $1 WHERE id = $2',
-      [seats, req.params.event_id]
+    // Usar total_seats como valor original, ignorar lo que mande el frontend
+    const result = await pool.query(
+      'UPDATE events SET available_seats = total_seats WHERE id = $1 RETURNING *',
+      [req.params.event_id]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
     await pool.query(
       'DELETE FROM reservations WHERE event_id = $1',
       [req.params.event_id]
     );
-    res.json({ success: true, message: `Evento reseteado a ${seats} asientos` });
+
+    const ev = result.rows[0];
+    res.json({
+      success: true,
+      message: `Evento reseteado a ${ev.total_seats} asientos`,
+      available_seats: ev.total_seats
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
